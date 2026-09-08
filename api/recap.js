@@ -1,6 +1,6 @@
 const { listTransactions } = require("../lib/sheets");
 const { sendTelegramMessage } = require("../lib/telegram");
-const { parseDateTimeWIB, startOfTodayWIB } = require("../lib/format");
+const { parseDateTimeWIB, startOfTodayWIB, startOfCycleWIB } = require("../lib/format");
 const { safeEqual } = require("../lib/secure");
 
 function formatIDR(n) {
@@ -16,12 +16,13 @@ module.exports = async (req, res) => {
     return res.status(401).json({ error: "unauthorized" });
   }
 
-  const period = req.query.period === "daily" ? "daily" : "weekly";
-  const since = period === "daily"
-    ? startOfTodayWIB().getTime()
-    : Date.now() - 7 * 24 * 60 * 60 * 1000;
+  // "monthly" covers the 28th-to-27th billing cycle, matching the sheet tabs;
+  // anything else is today only.
+  const period = req.query.period === "monthly" ? "monthly" : "daily";
+  const since = period === "monthly" ? startOfCycleWIB().getTime() : startOfTodayWIB().getTime();
 
-  const all = await listTransactions({ monthsBack: 1 });
+  // The current cycle sheet holds everything either period needs.
+  const all = await listTransactions({ monthsBack: 0 });
   const inRange = all.filter((t) => {
     const d = parseDateTimeWIB(t.date);
     return d && d.getTime() >= since;
@@ -29,7 +30,6 @@ module.exports = async (req, res) => {
 
   const income = inRange.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const expense = inRange.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
-  const net = income - expense;
 
   const bySource = {};
   for (const t of inRange.filter((t) => t.type === "expense")) {
@@ -39,16 +39,9 @@ module.exports = async (req, res) => {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
 
-  const heading = period === "daily" ? "📅 Rekap Harian" : "📊 Rekap Mingguan";
+  const heading = period === "monthly" ? "🗓️ Rekap Bulanan" : "📅 Rekap Harian";
 
-  const lines = [
-    `<b>${heading}</b>`,
-    "",
-    `Pemasukan: ${formatIDR(income)}`,
-    `Pengeluaran: ${formatIDR(expense)}`,
-    `Selisih: ${net >= 0 ? "+" : ""}${formatIDR(net)}`,
-    `Jumlah transaksi: ${inRange.length}`,
-  ];
+  const lines = [`<b>${heading}</b>`, "", `Pemasukan: ${formatIDR(income)}`, `Pengeluaran: ${formatIDR(expense)}`, `Jumlah transaksi: ${inRange.length}`];
 
   if (topSources.length) {
     lines.push("", "<b>Top aplikasi pengeluaran:</b>");
@@ -58,5 +51,5 @@ module.exports = async (req, res) => {
   }
 
   await sendTelegramMessage(lines.join("\n"));
-  return res.status(200).json({ ok: true, period, income, expense, net, count: inRange.length });
+  return res.status(200).json({ ok: true, period, income, expense, count: inRange.length });
 };

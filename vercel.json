@@ -1,12 +1,12 @@
 {
   "crons": [
     {
-      "path": "/api/recap?period=weekly",
-      "schedule": "0 1 * * 1"
+      "path": "/api/recap?period=daily",
+      "schedule": "59 16 * * *"
     },
     {
-      "path": "/api/recap?period=daily",
-      "schedule": "0 16 * * *"
+      "path": "/api/recap?period=monthly",
+      "schedule": "59 16 27 * *"
     }
   ],
   "headers": [
@@ -29,9 +29,7 @@
     },
     {
       "source": "/api/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, private" }
-      ]
+      "headers": [{ "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, private" }]
     }
   ]
 }
