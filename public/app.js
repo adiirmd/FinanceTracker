@@ -17,7 +17,6 @@ const togglePassword = document.getElementById("toggle-password");
 const ledgerBody = document.getElementById("ledger-body");
 const sumIncomeEl = document.getElementById("sum-income");
 const sumExpenseEl = document.getElementById("sum-expense");
-const sumNetEl = document.getElementById("sum-net");
 const periodSelect = document.getElementById("filter-period");
 const typeSelect = document.getElementById("filter-type");
 const sourceSelect = document.getElementById("filter-source");
@@ -273,7 +272,6 @@ function applyAndRender() {
   const expense = filtered.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
   sumIncomeEl.textContent = formatIDR(income);
   sumExpenseEl.textContent = formatIDR(expense);
-  sumNetEl.textContent = formatIDR(income - expense);
 
   ledgerBody.innerHTML = "";
 
@@ -315,31 +313,204 @@ function renderRow(t) {
   return tr;
 }
 
-function exportCSV() {
+function describeActiveFilters() {
+  const label = (sel) => sel.options[sel.selectedIndex].text;
+  const parts = [label(periodSelect), label(typeSelect), label(sourceSelect)];
+  const search = searchBox.value.trim();
+  if (search) parts.push(`pencarian "${search}"`);
+  return parts.join(", ");
+}
+
+function exportPDF() {
   const rows = getFilteredSorted();
   if (!rows.length) {
     alert("Gak ada data buat di-export (cek filter-nya)");
     return;
   }
 
-  const header = ["Tanggal", "Tipe", "Jumlah", "Aplikasi", "Keterangan"];
-  const csvEscape = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-
-  const lines = [header.map(csvEscape).join(",")];
-  for (const t of rows) {
-    lines.push([t.date, t.type === "income" ? "Pemasukan" : "Pengeluaran", t.amount, t.source, t.raw].map(csvEscape).join(","));
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    alert("Library PDF gagal dimuat. Cek koneksi internet lalu refresh halaman.");
+    return;
   }
 
-  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 40;
+
+  const income = rows.filter((t) => t.type === "income");
+  const expense = rows.filter((t) => t.type === "expense");
+  const totalIncome = income.reduce((s, t) => s + t.amount, 0);
+  const totalExpense = expense.reduce((s, t) => s + t.amount, 0);
+
+  const avg = (list, total) => (list.length ? total / list.length : 0);
+  const biggest = (list) => list.reduce((max, t) => (t.amount > max ? t.amount : max), 0);
+
+  // State the window these numbers describe, so the report is never read as
+  // "everything" when a filter was active.
+  const withDates = rows
+    .map((t) => ({ t, d: parseWIBDateTime(t.date) }))
+    .filter((x) => x.d)
+    .sort((a, b) => a.d - b.d);
+  const spanText = withDates.length ? `${withDates[0].t.date} s/d ${withDates[withDates.length - 1].t.date}` : "-";
+
+  const now = new Date();
+  const generatedAt = `${String(now.getDate()).padStart(2, "0")} ${MONTHS_ID_SHORT[now.getMonth()]} ${now.getFullYear()} ` + `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+  // ---- Header ----
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("Laporan Keuangan", margin, 50);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(110);
+  doc.text(`Dibuat: ${generatedAt}`, margin, 66);
+  doc.text(`Rentang data: ${spanText}`, margin, 78);
+  doc.text(`Filter aktif: ${describeActiveFilters()}`, margin, 90);
+  doc.setTextColor(20);
+
+  // ---- Ringkasan ----
+  doc.autoTable({
+    startY: 108,
+    head: [["Ringkasan", "Pemasukan", "Pengeluaran"]],
+    body: [
+      ["Total", formatIDR(totalIncome), formatIDR(totalExpense)],
+      ["Jumlah transaksi", String(income.length), String(expense.length)],
+      ["Rata-rata per transaksi", formatIDR(avg(income, totalIncome)), formatIDR(avg(expense, totalExpense))],
+      ["Transaksi terbesar", formatIDR(biggest(income)), formatIDR(biggest(expense))],
+    ],
+    theme: "grid",
+    headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: "bold" },
+    styles: { font: "helvetica", fontSize: 9, cellPadding: 6 },
+    columnStyles: {
+      0: { cellWidth: 160, fontStyle: "bold" },
+      1: { halign: "right", textColor: [5, 150, 105] },
+      2: { halign: "right", textColor: [220, 38, 38] },
+    },
+    margin: { left: margin, right: margin },
+  });
+
+  // ---- Per aplikasi ----
+  const apps = {};
+  for (const t of rows) {
+    const key = t.source || "(tanpa nama)";
+    if (!apps[key]) apps[key] = { incomeCount: 0, incomeTotal: 0, expenseCount: 0, expenseTotal: 0 };
+    if (t.type === "income") {
+      apps[key].incomeCount++;
+      apps[key].incomeTotal += t.amount;
+    } else {
+      apps[key].expenseCount++;
+      apps[key].expenseTotal += t.amount;
+    }
+  }
+
+  const appRows = Object.entries(apps)
+    .sort((a, b) => b[1].expenseTotal + b[1].incomeTotal - (a[1].expenseTotal + a[1].incomeTotal))
+    .map(([name, st]) => {
+      const sharePct = totalExpense > 0 ? (st.expenseTotal / totalExpense) * 100 : 0;
+      return [name, `${st.incomeCount}x`, formatIDR(st.incomeTotal), `${st.expenseCount}x`, formatIDR(st.expenseTotal), `${sharePct.toFixed(1)}%`];
+    });
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("Rincian per Aplikasi", margin, doc.lastAutoTable.finalY + 26);
+
+  doc.autoTable({
+    startY: doc.lastAutoTable.finalY + 34,
+    head: [["Aplikasi", "Masuk", "Total Masuk", "Keluar", "Total Keluar", "% Pengeluaran"]],
+    body: appRows.length ? appRows : [["-", "-", "-", "-", "-", "-"]],
+    theme: "grid",
+    headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: "bold" },
+    styles: { font: "helvetica", fontSize: 9, cellPadding: 5 },
+    columnStyles: {
+      1: { halign: "center" },
+      2: { halign: "right", textColor: [5, 150, 105] },
+      3: { halign: "center" },
+      4: { halign: "right", textColor: [220, 38, 38] },
+      5: { halign: "right" },
+    },
+    margin: { left: margin, right: margin },
+  });
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(110);
+  doc.text('"% Pengeluaran" = porsi aplikasi tsb terhadap total pengeluaran pada rentang ini.', margin, doc.lastAutoTable.finalY + 14);
+  doc.setTextColor(20);
+
+  // ---- Pengeluaran terbesar ----
+  const topExpenses = expense
+    .slice()
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5);
+  if (topExpenses.length) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("5 Pengeluaran Terbesar", margin, doc.lastAutoTable.finalY + 38);
+
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 46,
+      head: [["Tanggal", "Aplikasi", "Jumlah", "Keterangan"]],
+      body: topExpenses.map((t) => [t.date, t.source || "-", formatIDR(t.amount), t.raw || "-"]),
+      theme: "grid",
+      headStyles: { fillColor: [220, 38, 38], textColor: 255, fontStyle: "bold" },
+      styles: { font: "helvetica", fontSize: 8, cellPadding: 5, overflow: "linebreak" },
+      columnStyles: {
+        0: { cellWidth: 105 },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 75, halign: "right" },
+      },
+      margin: { left: margin, right: margin },
+    });
+  }
+
+  // ---- Detail semua transaksi ----
+  doc.addPage();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("Detail Semua Transaksi", margin, 50);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(110);
+  doc.text(`${rows.length} transaksi, urut dari yang terbaru.`, margin, 64);
+  doc.setTextColor(20);
+
+  doc.autoTable({
+    startY: 76,
+    head: [["Tanggal", "Jenis", "Aplikasi", "Jumlah", "Keterangan"]],
+    body: rows.map((t) => [t.date, t.type === "income" ? "Pemasukan" : "Pengeluaran", t.source || "-", (t.type === "income" ? "+" : "-") + formatIDR(t.amount), t.raw || "-"]),
+    theme: "striped",
+    headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: "bold" },
+    styles: { font: "helvetica", fontSize: 8, cellPadding: 4, overflow: "linebreak" },
+    columnStyles: {
+      0: { cellWidth: 100 },
+      1: { cellWidth: 62 },
+      2: { cellWidth: 62 },
+      3: { cellWidth: 72, halign: "right" },
+    },
+    // Colour the amount by direction so the sheet stays scannable.
+    didParseCell: (data) => {
+      if (data.section === "body" && data.column.index === 3) {
+        const isIncome = String(data.cell.raw).startsWith("+");
+        data.cell.styles.textColor = isIncome ? [5, 150, 105] : [220, 38, 38];
+      }
+    },
+    margin: { left: margin, right: margin },
+  });
+
+  // ---- Page numbers ----
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(130);
+    doc.text(`Halaman ${i} dari ${pageCount}`, pageWidth - margin, doc.internal.pageSize.getHeight() - 20, { align: "right" });
+  }
+
   const stamp = new Date().toISOString().slice(0, 10);
-  a.href = url;
-  a.download = `keuangan-${stamp}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  doc.save(`laporan-keuangan-${stamp}.pdf`);
 }
 
 function renderChart() {
@@ -573,7 +744,7 @@ for (const el of [periodSelect, typeSelect, sourceSelect, sortSelect]) {
   el.addEventListener("change", applyAndRender);
 }
 searchBox.addEventListener("input", applyAndRender);
-exportBtn.addEventListener("click", exportCSV);
+exportBtn.addEventListener("click", exportPDF);
 loadmoreBtn.addEventListener("click", () => {
   monthsBack = Math.min(monthsBack + 1, MAX_MONTHS_BACK);
   loadTransactions();
