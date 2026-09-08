@@ -1,0 +1,14 @@
+{
+  "name": "finance-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "No-database personal finance tracker: bank/e-wallet notifications -> Google Sheets -> Telegram recap",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "google-auth-library": "^9.14.1",
+    "googleapis": "^144.0.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
