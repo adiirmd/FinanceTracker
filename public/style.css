@@ -1,0 +1,556 @@
+:root,
+:root[data-theme="light"] {
+  --bg: #f3f4f6;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --income: #059669;
+  --income-bg: #d1fae5;
+  --expense: #dc2626;
+  --expense-bg: #fee2e2;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-bg: #dbeafe;
+  --accent-bg-hover: #bfdbfe;
+  --expense-bg-hover: #fecaca;
+  --grid: #e5e7eb;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06);
+  --overlay: rgba(17, 24, 39, 0.45);
+  --sans: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0f1420;
+  --card: #171d2b;
+  --border: #2a3244;
+  --text: #e5e9f0;
+  --muted: #94a3b8;
+  --income: #34d399;
+  --income-bg: rgba(52, 211, 153, 0.16);
+  --expense: #f87171;
+  --expense-bg: rgba(248, 113, 113, 0.16);
+  --accent: #60a5fa;
+  --accent-hover: #3b82f6;
+  --accent-bg: rgba(96, 165, 250, 0.16);
+  --accent-bg-hover: rgba(96, 165, 250, 0.28);
+  --expense-bg-hover: rgba(248, 113, 113, 0.28);
+  --grid: #2a3244;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 28px rgba(0,0,0,0.35);
+  --overlay: rgba(0, 0, 0, 0.6);
+}
+
+* { box-sizing: border-box; }
+
+html { color-scheme: light dark; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* ---------- Theme toggle ---------- */
+.icon-toggle, .theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.icon-toggle:hover, .theme-toggle:hover { color: var(--text); border-color: var(--accent); }
+
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+}
+
+/* ---------- Login page ---------- */
+.login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+}
+
+/* The [hidden] attribute alone loses to `display: flex`, so restate it. */
+.login-shell[hidden] { display: none; }
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: clamp(22px, 5vw, 32px) clamp(18px, 5vw, 28px);
+}
+
+.login-brand {
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(18px, 4.5vw, 20px);
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.login-brand span { color: var(--text); }
+
+.login-card h1 {
+  font-size: clamp(17px, 4vw, 19px);
+  font-weight: 700;
+  margin: 0 0 20px;
+}
+
+.field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.input-with-icon {
+  position: relative;
+  margin-bottom: 18px;
+}
+
+.input-with-icon > svg:first-of-type {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.input-with-icon input {
+  width: 100%;
+  padding-left: 36px;
+}
+
+.input-with-icon input[type="password"],
+.input-with-icon input#password {
+  padding-right: 44px;
+}
+
+.toggle-visibility {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+}
+.toggle-visibility:hover { color: var(--text); background: var(--accent-bg); }
+
+.error-msg {
+  color: var(--expense);
+  font-size: 13px;
+  margin-top: 12px;
+  min-height: 14px;
+  text-align: center;
+}
+
+/* ---------- Shared form controls ---------- */
+input, select {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px; /* >=16px stops iOS Safari zooming on focus */
+  padding: 10px 12px;
+  border-radius: 6px;
+  max-width: 100%;
+}
+
+@media (min-width: 641px) {
+  input, select { font-size: 14px; }
+}
+
+input:focus, select:focus, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+select:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-primary, .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 40px;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+.btn-primary:hover { background: var(--accent-hover); }
+
+:root[data-theme="dark"] .btn-primary { color: #0b1220; }
+
+.btn-outline {
+  background: var(--card);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.btn-outline:hover { background: var(--accent-bg); }
+
+.btn-block { width: 100%; }
+
+/* ---------- Dashboard layout ---------- */
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 16px 14px 60px;
+}
+
+.page[hidden] { display: none; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.topbar .brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(17px, 4.5vw, 19px);
+  font-weight: 700;
+  min-width: 0;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.filter-bar select { flex: 1 1 150px; min-width: 0; }
+.filter-bar input[type="search"] { flex: 2 1 200px; min-width: 0; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: clamp(14px, 3vw, 18px);
+  margin-bottom: 16px;
+}
+
+.card h2 {
+  font-size: clamp(15px, 3.5vw, 16px);
+  font-weight: 700;
+  margin: 0 0 14px;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.summary-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.summary-value {
+  font-size: clamp(17px, 4.5vw, 19px);
+  font-weight: 700;
+  word-break: break-word;
+}
+.summary-value.income { color: var(--income); }
+.summary-value.expense { color: var(--expense); }
+
+.chart-frame {
+  position: relative;
+  height: clamp(200px, 45vw, 300px);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.section-header h2 { margin: 0; }
+
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+.tx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tx-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.tx-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.tx-table tr:last-child td { border-bottom: none; }
+
+.tx-table .amount { font-weight: 600; white-space: nowrap; }
+.tx-table .amount.income { color: var(--income); }
+.tx-table .amount.expense { color: var(--expense); }
+
+.pill {
+  display: inline-block;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pill.income { background: var(--income-bg); color: var(--income); }
+.pill.expense { background: var(--expense-bg); color: var(--expense); }
+
+.actions-cell { display: flex; gap: 6px; }
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.icon-btn.edit { background: var(--accent-bg); color: var(--accent); }
+.icon-btn.edit:hover { background: var(--accent-bg-hover); }
+.icon-btn.delete { background: var(--expense-bg); color: var(--expense); }
+.icon-btn.delete:hover { background: var(--expense-bg-hover); }
+
+.empty-cell {
+  text-align: center;
+  color: var(--muted);
+  padding: 32px 12px;
+}
+
+button.loadmore {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 13px;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+button.loadmore:hover { color: var(--text); border-color: var(--accent); }
+button.loadmore:disabled { opacity: 0.5; cursor: default; }
+
+/* ---------- Modal ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 50;
+}
+.modal-backdrop[hidden] { display: none; }
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: clamp(18px, 4vw, 22px);
+  box-shadow: var(--shadow);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.modal-header h3 { margin: 0; font-size: 17px; }
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 4px;
+}
+.modal-close:hover { color: var(--text); }
+
+#tx-form select, #tx-form input {
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+/* ---------- Responsive: tablet ---------- */
+@media (max-width: 860px) {
+  .tx-table th, .tx-table td { padding: 10px 8px; }
+}
+
+/* ---------- Responsive: phone — table reflows into stacked cards ---------- */
+@media (max-width: 640px) {
+  .page { padding: 14px 12px 48px; }
+
+  .filter-bar select,
+  .filter-bar input[type="search"],
+  .filter-bar .btn-outline { flex: 1 1 100%; }
+
+  .section-header { flex-direction: column; align-items: stretch; }
+  .section-header .btn-primary { width: 100%; }
+
+  .table-wrap { overflow-x: visible; }
+
+  .tx-table thead { display: none; }
+
+  .tx-table, .tx-table tbody, .tx-table tr, .tx-table td { display: block; width: 100%; }
+
+  .tx-table tr {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+
+  .tx-table td {
+    border: none;
+    padding: 5px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    text-align: right;
+  }
+
+  /* Label each stacked cell using the header name carried in data-label */
+  .tx-table td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  .tx-table td.empty-cell {
+    display: block;
+    text-align: center;
+  }
+  .tx-table td.empty-cell::before { content: none; }
+
+  .tx-table tr:has(td.empty-cell) { border: none; padding: 0; }
+
+  .actions-cell { justify-content: flex-end; }
+
+  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions button { width: 100%; }
+
+  .theme-toggle { top: 12px; right: 12px; }
+}
+
+/* ---------- Responsive: very small phones ---------- */
+@media (max-width: 380px) {
+  .topbar .brand span { font-size: 16px; }
+  .btn-outline .btn-text { display: none; }
+  .btn-outline { padding: 10px 12px; }
+}
+
+/* The `hidden` attribute is ignored on inline SVG in Chrome/Safari — their UA
+   stylesheet scopes that rule to HTML elements only — so icon toggles would
+   render both states stacked. Restate it explicitly. */
+svg[hidden] { display: none !important; }
+
+/* The `hidden` attribute is ignored on inline SVG in Chrome/Safari — their UA
+   stylesheet scopes that rule to HTML elements only — so icon toggles would
+   render both states stacked. Restate it explicitly. */
+svg[hidden] { display: none !important; }
