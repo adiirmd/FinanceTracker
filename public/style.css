@@ -549,8 +549,3 @@ button.loadmore:disabled { opacity: 0.5; cursor: default; }
    stylesheet scopes that rule to HTML elements only — so icon toggles would
    render both states stacked. Restate it explicitly. */
 svg[hidden] { display: none !important; }
-
-/* The `hidden` attribute is ignored on inline SVG in Chrome/Safari — their UA
-   stylesheet scopes that rule to HTML elements only — so icon toggles would
-   render both states stacked. Restate it explicitly. */
-svg[hidden] { display: none !important; }

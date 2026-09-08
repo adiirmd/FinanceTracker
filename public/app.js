@@ -42,8 +42,8 @@ let monthsBack = 1;
 let editingId = null;
 const MAX_MONTHS_BACK = 12;
 
-const MONTHS_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-const MONTHS_ID_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const MONTHS_ID = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const MONTHS_ID_SHORT = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
 const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
 
 function formatIDR(n) {
@@ -213,7 +213,8 @@ function populateSourceOptions() {
   const current = sourceSelect.value;
   const sources = [...new Set(allTransactions.map((t) => t.source).filter(Boolean))].sort();
 
-  sourceSelect.innerHTML = '<option value="all">Semua aplikasi</option>' + sources.map((s) => `<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`).join("");
+  sourceSelect.innerHTML = '<option value="all">Semua aplikasi</option>' +
+    sources.map((s) => `<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`).join("");
 
   if (sources.includes(current)) sourceSelect.value = current;
 }
@@ -352,10 +353,13 @@ function exportPDF() {
     .map((t) => ({ t, d: parseWIBDateTime(t.date) }))
     .filter((x) => x.d)
     .sort((a, b) => a.d - b.d);
-  const spanText = withDates.length ? `${withDates[0].t.date} s/d ${withDates[withDates.length - 1].t.date}` : "-";
+  const spanText = withDates.length
+    ? `${withDates[0].t.date} s/d ${withDates[withDates.length - 1].t.date}`
+    : "-";
 
   const now = new Date();
-  const generatedAt = `${String(now.getDate()).padStart(2, "0")} ${MONTHS_ID_SHORT[now.getMonth()]} ${now.getFullYear()} ` + `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const generatedAt = `${String(now.getDate()).padStart(2, "0")} ${MONTHS_ID_SHORT[now.getMonth()]} ${now.getFullYear()} ` +
+    `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
   // ---- Header ----
   doc.setFont("helvetica", "bold");
@@ -406,10 +410,17 @@ function exportPDF() {
   }
 
   const appRows = Object.entries(apps)
-    .sort((a, b) => b[1].expenseTotal + b[1].incomeTotal - (a[1].expenseTotal + a[1].incomeTotal))
+    .sort((a, b) => (b[1].expenseTotal + b[1].incomeTotal) - (a[1].expenseTotal + a[1].incomeTotal))
     .map(([name, st]) => {
       const sharePct = totalExpense > 0 ? (st.expenseTotal / totalExpense) * 100 : 0;
-      return [name, `${st.incomeCount}x`, formatIDR(st.incomeTotal), `${st.expenseCount}x`, formatIDR(st.expenseTotal), `${sharePct.toFixed(1)}%`];
+      return [
+        name,
+        `${st.incomeCount}x`,
+        formatIDR(st.incomeTotal),
+        `${st.expenseCount}x`,
+        formatIDR(st.expenseTotal),
+        `${sharePct.toFixed(1)}%`,
+      ];
     });
 
   doc.setFont("helvetica", "bold");
@@ -436,14 +447,15 @@ function exportPDF() {
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(110);
-  doc.text('"% Pengeluaran" = porsi aplikasi tsb terhadap total pengeluaran pada rentang ini.', margin, doc.lastAutoTable.finalY + 14);
+  doc.text(
+    '"% Pengeluaran" = porsi aplikasi tsb terhadap total pengeluaran pada rentang ini.',
+    margin,
+    doc.lastAutoTable.finalY + 14
+  );
   doc.setTextColor(20);
 
   // ---- Pengeluaran terbesar ----
-  const topExpenses = expense
-    .slice()
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 5);
+  const topExpenses = expense.slice().sort((a, b) => b.amount - a.amount).slice(0, 5);
   if (topExpenses.length) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
@@ -479,7 +491,13 @@ function exportPDF() {
   doc.autoTable({
     startY: 76,
     head: [["Tanggal", "Jenis", "Aplikasi", "Jumlah", "Keterangan"]],
-    body: rows.map((t) => [t.date, t.type === "income" ? "Pemasukan" : "Pengeluaran", t.source || "-", (t.type === "income" ? "+" : "-") + formatIDR(t.amount), t.raw || "-"]),
+    body: rows.map((t) => [
+      t.date,
+      t.type === "income" ? "Pemasukan" : "Pengeluaran",
+      t.source || "-",
+      (t.type === "income" ? "+" : "-") + formatIDR(t.amount),
+      t.raw || "-",
+    ]),
     theme: "striped",
     headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: "bold" },
     styles: { font: "helvetica", fontSize: 8, cellPadding: 4, overflow: "linebreak" },
@@ -506,7 +524,12 @@ function exportPDF() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(130);
-    doc.text(`Halaman ${i} dari ${pageCount}`, pageWidth - margin, doc.internal.pageSize.getHeight() - 20, { align: "right" });
+    doc.text(
+      `Halaman ${i} dari ${pageCount}`,
+      pageWidth - margin,
+      doc.internal.pageSize.getHeight() - 20,
+      { align: "right" }
+    );
   }
 
   const stamp = new Date().toISOString().slice(0, 10);

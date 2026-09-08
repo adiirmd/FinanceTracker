@@ -1,14 +1,18 @@
 const { listTransactions } = require("../lib/sheets");
 const { sendTelegramMessage } = require("../lib/telegram");
 const { parseDateTimeWIB, startOfTodayWIB } = require("../lib/format");
+const { safeEqual } = require("../lib/secure");
 
 function formatIDR(n) {
   return "Rp" + Math.round(n).toLocaleString("id-ID");
 }
 
 module.exports = async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  // When CRON_SECRET is set in the Vercel project, Vercel automatically sends
+  // it as "Authorization: Bearer <CRON_SECRET>" on cron-triggered requests.
+  const authHeader = String(req.headers.authorization || "");
+  const expected = process.env.CRON_SECRET;
+  if (!expected || !safeEqual(authHeader, `Bearer ${expected}`)) {
     return res.status(401).json({ error: "unauthorized" });
   }
 

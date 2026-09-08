@@ -1,221 +1,213 @@
 <!doctype html>
 <html lang="id">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Keuangan</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/style.css" />
-    <script>
-      // Applied before first paint so the page never flashes the wrong theme.
-      (function () {
-        try {
-          var saved = localStorage.getItem("theme");
-          var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-          document.documentElement.dataset.theme = saved || (prefersDark ? "dark" : "light");
-        } catch (e) {
-          document.documentElement.dataset.theme = "light";
-        }
-      })();
-    </script>
-  </head>
-  <body>
-    <!-- Login and dashboard live on one page on purpose: the auth token is kept
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Keuangan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+<script src="/theme.js"></script>
+</head>
+<body>
+
+  <!-- Login and dashboard live on one page on purpose: the auth token is kept
        in a JS variable only, so any navigation or reload destroys it. -->
-    <div class="login-shell" id="login-view">
-      <button class="theme-toggle" id="theme-toggle-login" type="button" aria-label="Ganti tema" title="Ganti tema">
-        <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" />
-          <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
-        <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" hidden>
-          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-        </svg>
-      </button>
+  <div class="login-shell" id="login-view">
+    <button class="theme-toggle" id="theme-toggle-login" type="button" aria-label="Ganti tema" title="Ganti tema">
+      <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
+        <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" hidden>
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+    </button>
 
-      <div class="login-card">
-        <div class="login-brand">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 17L9 11L13 15L21 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M15 7H21V13" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+    <div class="login-card">
+      <div class="login-brand">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 17L9 11L13 15L21 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M15 7H21V13" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Keuangan</span>
+      </div>
+
+      <h1>Masuk ke Akun Anda</h1>
+
+      <form id="login-form">
+        <label class="field-label" for="username">Nama Pengguna</label>
+        <div class="input-with-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+            <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
-          <span>Keuangan</span>
+          <input id="username" type="text" name="username" placeholder="Masukkan Nama Pengguna" autocomplete="username" required />
         </div>
 
-        <h1>Masuk ke Akun Anda</h1>
-
-        <form id="login-form">
-          <label class="field-label" for="username">Nama Pengguna</label>
-          <div class="input-with-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2" />
-              <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        <label class="field-label" for="password">Kata Sandi</label>
+        <div class="input-with-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="2"/>
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          <input id="password" type="password" name="password" placeholder="Masukkan Kata Sandi" autocomplete="current-password" required />
+          <button type="button" class="toggle-visibility" id="toggle-password" aria-label="Tampilkan kata sandi" title="Tampilkan kata sandi">
+            <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="2"/>
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
             </svg>
-            <input id="username" type="text" name="username" placeholder="Masukkan Nama Pengguna" autocomplete="username" required />
-          </div>
-
-          <label class="field-label" for="password">Kata Sandi</label>
-          <div class="input-with-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="2" />
-              <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="2" />
+            <svg class="eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" hidden>
+              <path d="M2 12s3.5-7 10-7c1.8 0 3.4.5 4.8 1.3M22 12s-3.5 7-10 7c-1.8 0-3.4-.5-4.8-1.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M3 3l18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            <input id="password" type="password" name="password" placeholder="Masukkan Kata Sandi" autocomplete="current-password" required />
-            <button type="button" class="toggle-visibility" id="toggle-password" aria-label="Tampilkan kata sandi" title="Tampilkan kata sandi">
-              <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="2" />
-                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
-              </svg>
-              <svg class="eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" hidden>
-                <path d="M2 12s3.5-7 10-7c1.8 0 3.4.5 4.8 1.3M22 12s-3.5 7-10 7c-1.8 0-3.4-.5-4.8-1.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                <path d="M3 3l18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-              </svg>
-            </button>
-          </div>
+          </button>
+        </div>
 
-          <button class="btn-primary btn-block" type="submit" id="login-submit">Masuk</button>
-        </form>
+        <button class="btn-primary btn-block" type="submit" id="login-submit">Masuk</button>
+      </form>
 
-        <div class="error-msg" id="login-error"></div>
+      <div class="error-msg" id="login-error"></div>
+    </div>
+  </div>
+
+  <div class="page" id="app-view" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 17L9 11L13 15L21 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M15 7H21V13" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Keuangan</span>
       </div>
+      <div class="topbar-actions">
+        <button class="icon-toggle" id="theme-toggle" type="button" aria-label="Ganti tema" title="Ganti tema">
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" hidden>
+            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="btn-outline" id="logout-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="btn-text">Keluar</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="filter-bar" id="filter-bar">
+      <select id="filter-period">
+        <option value="all">Semua periode</option>
+        <option value="today">Hari ini</option>
+        <option value="week">7 hari</option>
+        <option value="month">Bulan ini</option>
+      </select>
+      <select id="filter-type">
+        <option value="all">Semua jenis</option>
+        <option value="income">Pemasukan</option>
+        <option value="expense">Pengeluaran</option>
+      </select>
+      <select id="filter-source">
+        <option value="all">Semua aplikasi</option>
+      </select>
+      <select id="filter-sort">
+        <option value="newest">Terbaru</option>
+        <option value="oldest">Terlama</option>
+      </select>
+      <input type="search" id="search-box" placeholder="Cari keterangan/aplikasi..." />
+      <button class="btn-outline" id="export-btn">Export PDF</button>
     </div>
 
-    <div class="page" id="app-view" hidden>
-      <header class="topbar">
-        <div class="brand">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 17L9 11L13 15L21 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M15 7H21V13" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          <span>Keuangan</span>
-        </div>
-        <div class="topbar-actions">
-          <button class="icon-toggle" id="theme-toggle" type="button" aria-label="Ganti tema" title="Ganti tema">
-            <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" />
-              <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-            </svg>
-            <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" hidden>
-              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-            </svg>
-          </button>
-          <button class="btn-outline" id="logout-btn">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-              <path d="M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <span class="btn-text">Keluar</span>
-          </button>
-        </div>
-      </header>
+    <section class="summary-cards">
+      <div class="summary-card">
+        <div class="summary-label">Pemasukan</div>
+        <div class="summary-value income" id="sum-income">Rp0</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Pengeluaran</div>
+        <div class="summary-value expense" id="sum-expense">Rp0</div>
+      </div>
+    </section>
 
-      <div class="filter-bar" id="filter-bar">
-        <select id="filter-period">
-          <option value="all">Semua periode</option>
-          <option value="today">Hari ini</option>
-          <option value="week">7 hari</option>
-          <option value="month">Bulan ini</option>
-        </select>
-        <select id="filter-type">
-          <option value="all">Semua jenis</option>
-          <option value="income">Pemasukan</option>
+    <section class="card chart-card">
+      <h2>Lalu Lintas Keuangan (<span id="chart-period-label">-</span>)</h2>
+      <div class="chart-frame">
+        <canvas id="trend-chart"></canvas>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-header">
+        <h2>Daftar Transaksi Keuangan</h2>
+        <button class="btn-primary" id="add-btn">+ Tambah Transaksi</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="tx-table">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Jenis</th>
+              <th>Aplikasi</th>
+              <th>Jumlah</th>
+              <th>Keterangan</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="ledger-body">
+            <tr><td colspan="6" class="empty-cell">memuat...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <button class="loadmore" id="loadmore-btn">Muat siklus sebelumnya</button>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="modal-backdrop" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">Tambah Transaksi</h3>
+        <button class="modal-close" id="modal-close" type="button" aria-label="Tutup">&times;</button>
+      </div>
+      <form id="tx-form">
+        <label class="field-label" for="tx-type">Jenis</label>
+        <select id="tx-type" name="type" required>
           <option value="expense">Pengeluaran</option>
+          <option value="income">Pemasukan</option>
         </select>
-        <select id="filter-source">
-          <option value="all">Semua aplikasi</option>
-        </select>
-        <select id="filter-sort">
-          <option value="newest">Terbaru</option>
-          <option value="oldest">Terlama</option>
-        </select>
-        <input type="search" id="search-box" placeholder="Cari keterangan/aplikasi..." />
-        <button class="btn-outline" id="export-btn">Export PDF</button>
-      </div>
 
-      <section class="summary-cards">
-        <div class="summary-card">
-          <div class="summary-label">Pemasukan</div>
-          <div class="summary-value income" id="sum-income">Rp0</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-label">Pengeluaran</div>
-          <div class="summary-value expense" id="sum-expense">Rp0</div>
-        </div>
-      </section>
+        <label class="field-label" for="tx-amount">Jumlah</label>
+        <input id="tx-amount" type="number" name="amount" placeholder="0" min="0" step="1" required />
 
-      <section class="card chart-card">
-        <h2>Lalu Lintas Keuangan (<span id="chart-period-label">-</span>)</h2>
-        <div class="chart-frame">
-          <canvas id="trend-chart"></canvas>
-        </div>
-      </section>
+        <label class="field-label" for="tx-source">Aplikasi</label>
+        <input id="tx-source" type="text" name="source" placeholder="mis. gopay, mybca, manual" />
 
-      <section class="card">
-        <div class="section-header">
-          <h2>Daftar Transaksi Keuangan</h2>
-          <button class="btn-primary" id="add-btn">+ Tambah Transaksi</button>
-        </div>
+        <label class="field-label" for="tx-raw">Keterangan</label>
+        <input id="tx-raw" type="text" name="raw" placeholder="Catatan singkat" />
 
-        <div class="table-wrap">
-          <table class="tx-table">
-            <thead>
-              <tr>
-                <th>Tanggal</th>
-                <th>Jenis</th>
-                <th>Aplikasi</th>
-                <th>Jumlah</th>
-                <th>Keterangan</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="ledger-body">
-              <tr>
-                <td colspan="6" class="empty-cell">memuat...</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="modal-actions">
+          <button type="button" class="btn-outline" id="modal-cancel">Batal</button>
+          <button type="submit" class="btn-primary" id="modal-submit">Simpan</button>
         </div>
-
-        <button class="loadmore" id="loadmore-btn">Muat siklus sebelumnya</button>
-      </section>
+      </form>
     </div>
+  </div>
 
-    <div class="modal-backdrop" id="modal-backdrop" hidden>
-      <div class="modal">
-        <div class="modal-header">
-          <h3 id="modal-title">Tambah Transaksi</h3>
-          <button class="modal-close" id="modal-close" type="button" aria-label="Tutup">&times;</button>
-        </div>
-        <form id="tx-form">
-          <label class="field-label" for="tx-type">Jenis</label>
-          <select id="tx-type" name="type" required>
-            <option value="expense">Pengeluaran</option>
-            <option value="income">Pemasukan</option>
-          </select>
-
-          <label class="field-label" for="tx-amount">Jumlah</label>
-          <input id="tx-amount" type="number" name="amount" placeholder="0" min="0" step="1" required />
-
-          <label class="field-label" for="tx-source">Aplikasi</label>
-          <input id="tx-source" type="text" name="source" placeholder="mis. gopay, mybca, manual" />
-
-          <label class="field-label" for="tx-raw">Keterangan</label>
-          <input id="tx-raw" type="text" name="raw" placeholder="Catatan singkat" />
-
-          <div class="modal-actions">
-            <button type="button" class="btn-outline" id="modal-cancel">Batal</button>
-            <button type="submit" class="btn-primary" id="modal-submit">Simpan</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/5.0.8/jspdf.plugin.autotable.min.js"></script>
-    <script src="/app.js"></script>
-  </body>
+  <!-- Self-hosted rather than loaded from a CDN: a compromised third-party
+       host would otherwise be able to run code on a page showing financial
+       data. Serving them from our own origin also lets the CSP forbid every
+       external script outright. -->
+  <script src="/vendor/chart.umd.min.js"></script>
+  <script src="/vendor/jspdf.umd.min.js"></script>
+  <script src="/vendor/jspdf.plugin.autotable.min.js"></script>
+  <script src="/app.js"></script>
+</body>
 </html>
