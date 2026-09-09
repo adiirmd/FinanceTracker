@@ -48,8 +48,8 @@ let currentCycle = null; // e.g. "September-2026"
 let page = 1;
 const PAGE_SIZE = 5;
 
-const MONTHS_ID = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-const MONTHS_ID_SHORT = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+const MONTHS_ID = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+const MONTHS_ID_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
 
 function formatIDR(n) {
@@ -218,9 +218,7 @@ async function loadTransactions() {
 
 function populateCycleOptions(cycles) {
   const list = cycles.length ? cycles : currentCycle ? [currentCycle] : [];
-  cycleSelect.innerHTML = list
-    .map((c) => `<option value="${escapeAttr(c)}">${escapeHtml(c.replace("-", " "))}</option>`)
-    .join("");
+  cycleSelect.innerHTML = list.map((c) => `<option value="${escapeAttr(c)}">${escapeHtml(c.replace("-", " "))}</option>`).join("");
   if (currentCycle && list.includes(currentCycle)) cycleSelect.value = currentCycle;
 }
 
@@ -228,8 +226,7 @@ function populateSourceOptions() {
   const current = sourceSelect.value;
   const sources = [...new Set(allTransactions.map((t) => t.source).filter(Boolean))].sort();
 
-  sourceSelect.innerHTML = '<option value="all">Semua aplikasi</option>' +
-    sources.map((s) => `<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`).join("");
+  sourceSelect.innerHTML = '<option value="all">Semua aplikasi</option>' + sources.map((s) => `<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`).join("");
 
   if (sources.includes(current)) sourceSelect.value = current;
 }
@@ -320,9 +317,7 @@ function applyAndRender() {
 }
 
 function updatePagination(totalRows, totalPages) {
-  pageInfo.textContent = totalRows
-    ? `Halaman ${page} dari ${totalPages} (${totalRows} transaksi)`
-    : "Tidak ada data";
+  pageInfo.textContent = totalRows ? `Halaman ${page} dari ${totalPages} (${totalRows} transaksi)` : "Tidak ada data";
   prevPageBtn.disabled = page <= 1 || !totalRows;
   nextPageBtn.disabled = page >= totalPages || !totalRows;
 }
@@ -354,12 +349,14 @@ function renderDailyRecap() {
   }
 
   recapBody.innerHTML = rows
-    .map(([day, v]) => `
+    .map(
+      ([day, v]) => `
       <tr>
         <td data-label="Tanggal">${escapeHtml(day)}</td>
         <td data-label="Pengeluaran" class="amount expense">${v.expense ? formatIDR(v.expense) : "-"}</td>
         <td data-label="Pemasukan" class="amount income">${v.income ? formatIDR(v.income) : "-"}</td>
-      </tr>`)
+      </tr>`,
+    )
     .join("");
 }
 
@@ -426,18 +423,17 @@ function exportPDF() {
     .map((t) => ({ t, d: parseWIBDateTime(t.date) }))
     .filter((x) => x.d)
     .sort((a, b) => a.d - b.d);
-  const spanText = withDates.length
-    ? `${withDates[0].t.date} s/d ${withDates[withDates.length - 1].t.date}`
-    : "-";
+  const spanText = withDates.length ? `${withDates[0].t.date} s/d ${withDates[withDates.length - 1].t.date}` : "-";
 
   const now = new Date();
-  const generatedAt = `${String(now.getDate()).padStart(2, "0")} ${MONTHS_ID_SHORT[now.getMonth()]} ${now.getFullYear()} ` +
-    `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const generatedAt = `${String(now.getDate()).padStart(2, "0")} ${MONTHS_ID_SHORT[now.getMonth()]} ${now.getFullYear()} ` + `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+  const cycleLabel = currentCycle ? currentCycle.replace("-", " ") : "";
 
   // ---- Header ----
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text("Laporan Keuangan", margin, 50);
+  doc.text(`Laporan Keuangan${cycleLabel ? " " + cycleLabel : ""}`, margin, 50);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
@@ -483,17 +479,10 @@ function exportPDF() {
   }
 
   const appRows = Object.entries(apps)
-    .sort((a, b) => (b[1].expenseTotal + b[1].incomeTotal) - (a[1].expenseTotal + a[1].incomeTotal))
+    .sort((a, b) => b[1].expenseTotal + b[1].incomeTotal - (a[1].expenseTotal + a[1].incomeTotal))
     .map(([name, st]) => {
       const sharePct = totalExpense > 0 ? (st.expenseTotal / totalExpense) * 100 : 0;
-      return [
-        name,
-        `${st.incomeCount}x`,
-        formatIDR(st.incomeTotal),
-        `${st.expenseCount}x`,
-        formatIDR(st.expenseTotal),
-        `${sharePct.toFixed(1)}%`,
-      ];
+      return [name, `${st.incomeCount}x`, formatIDR(st.incomeTotal), `${st.expenseCount}x`, formatIDR(st.expenseTotal), `${sharePct.toFixed(1)}%`];
     });
 
   doc.setFont("helvetica", "bold");
@@ -520,15 +509,14 @@ function exportPDF() {
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(110);
-  doc.text(
-    '"% Pengeluaran" = porsi aplikasi tsb terhadap total pengeluaran pada rentang ini.',
-    margin,
-    doc.lastAutoTable.finalY + 14
-  );
+  doc.text('"% Pengeluaran" = porsi aplikasi tsb terhadap total pengeluaran pada rentang ini.', margin, doc.lastAutoTable.finalY + 14);
   doc.setTextColor(20);
 
   // ---- Pengeluaran terbesar ----
-  const topExpenses = expense.slice().sort((a, b) => b.amount - a.amount).slice(0, 5);
+  const topExpenses = expense
+    .slice()
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5);
   if (topExpenses.length) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
@@ -551,26 +539,29 @@ function exportPDF() {
   }
 
   // ---- Detail semua transaksi ----
-  doc.addPage();
+  // Continues right after the previous section. The heading is drawn by hand,
+  // so unlike an autoTable it won't move itself to the next page — check there
+  // is room for the heading plus a few rows, otherwise start a page first.
+  const pageHeight = doc.internal.pageSize.getHeight();
+  let detailY = doc.lastAutoTable.finalY + 38;
+  if (detailY > pageHeight - 140) {
+    doc.addPage();
+    detailY = 50;
+  }
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.text("Detail Semua Transaksi", margin, 50);
+  doc.text("Detail Semua Transaksi", margin, detailY);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(110);
-  doc.text(`${rows.length} transaksi, urut dari yang terbaru.`, margin, 64);
+  doc.text(`${rows.length} transaksi, urut dari yang terbaru.`, margin, detailY + 14);
   doc.setTextColor(20);
 
   doc.autoTable({
-    startY: 76,
+    startY: detailY + 26,
     head: [["Tanggal", "Jenis", "Aplikasi", "Jumlah", "Keterangan"]],
-    body: rows.map((t) => [
-      t.date,
-      t.type === "income" ? "Pemasukan" : "Pengeluaran",
-      t.source || "-",
-      (t.type === "income" ? "+" : "-") + formatIDR(t.amount),
-      t.raw || "-",
-    ]),
+    body: rows.map((t) => [t.date, t.type === "income" ? "Pemasukan" : "Pengeluaran", t.source || "-", (t.type === "income" ? "+" : "-") + formatIDR(t.amount), t.raw || "-"]),
     theme: "striped",
     headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: "bold" },
     styles: { font: "helvetica", fontSize: 8, cellPadding: 4, overflow: "linebreak" },
@@ -597,16 +588,12 @@ function exportPDF() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(130);
-    doc.text(
-      `Halaman ${i} dari ${pageCount}`,
-      pageWidth - margin,
-      doc.internal.pageSize.getHeight() - 20,
-      { align: "right" }
-    );
+    doc.text(`Halaman ${i} dari ${pageCount}`, pageWidth - margin, doc.internal.pageSize.getHeight() - 20, { align: "right" });
   }
 
   const stamp = new Date().toISOString().slice(0, 10);
-  doc.save(`laporan-keuangan-${stamp}.pdf`);
+  const fileName = cycleLabel ? `Laporan Keuangan ${cycleLabel}.pdf` : `Laporan Keuangan ${stamp}.pdf`;
+  doc.save(fileName);
 }
 
 function renderChart() {
