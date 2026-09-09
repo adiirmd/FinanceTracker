@@ -19,10 +19,12 @@ module.exports = async (req, res) => {
   // "monthly" covers the 28th-to-27th billing cycle, matching the sheet tabs;
   // anything else is today only.
   const period = req.query.period === "monthly" ? "monthly" : "daily";
-  const since = period === "monthly" ? startOfCycleWIB().getTime() : startOfTodayWIB().getTime();
+  const since = period === "monthly"
+    ? startOfCycleWIB().getTime()
+    : startOfTodayWIB().getTime();
 
   // The current cycle sheet holds everything either period needs.
-  const all = await listTransactions({ monthsBack: 0 });
+  const all = await listTransactions();
   const inRange = all.filter((t) => {
     const d = parseDateTimeWIB(t.date);
     return d && d.getTime() >= since;
@@ -41,7 +43,13 @@ module.exports = async (req, res) => {
 
   const heading = period === "monthly" ? "🗓️ Rekap Bulanan" : "📅 Rekap Harian";
 
-  const lines = [`<b>${heading}</b>`, "", `Pemasukan: ${formatIDR(income)}`, `Pengeluaran: ${formatIDR(expense)}`, `Jumlah transaksi: ${inRange.length}`];
+  const lines = [
+    `<b>${heading}</b>`,
+    "",
+    `Pemasukan: ${formatIDR(income)}`,
+    `Pengeluaran: ${formatIDR(expense)}`,
+    `Jumlah transaksi: ${inRange.length}`,
+  ];
 
   if (topSources.length) {
     lines.push("", "<b>Top aplikasi pengeluaran:</b>");

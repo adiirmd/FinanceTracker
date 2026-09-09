@@ -399,21 +399,39 @@ select:disabled { opacity: 0.6; cursor: not-allowed; }
   padding: 32px 12px;
 }
 
-button.loadmore {
-  display: block;
-  width: 100%;
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
   background: var(--card);
   border: 1px solid var(--border);
-  color: var(--muted);
+  color: var(--text);
   font-family: var(--sans);
   font-size: 13px;
-  padding: 12px;
+  font-weight: 500;
+  padding: 9px 14px;
   border-radius: 6px;
   cursor: pointer;
+  white-space: nowrap;
 }
-button.loadmore:hover { color: var(--text); border-color: var(--accent); }
-button.loadmore:disabled { opacity: 0.5; cursor: default; }
+.page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.page-btn:disabled { opacity: 0.4; cursor: default; }
+
+.page-info {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  flex: 1 1 auto;
+}
+
+/* The recap table has no action column, so its amounts carry the weight. */
+.recap-table .amount { font-weight: 600; }
 
 /* ---------- Modal ---------- */
 .modal-backdrop {
@@ -531,6 +549,10 @@ button.loadmore:disabled { opacity: 0.5; cursor: default; }
   .tx-table tr:has(td.empty-cell) { border: none; padding: 0; }
 
   .actions-cell { justify-content: flex-end; }
+
+  .pagination { flex-direction: column; }
+  .pagination .page-btn { width: 100%; }
+  .page-info { order: -1; }
 
   .modal-actions { flex-direction: column-reverse; }
   .modal-actions button { width: 100%; }
