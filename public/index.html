@@ -103,6 +103,7 @@
       </header>
 
       <div class="filter-bar" id="filter-bar">
+        <select id="filter-cycle" title="Periode siklus (tanggal 28 s/d 27)"></select>
         <select id="filter-period">
           <option value="all">Semua periode</option>
           <option value="today">Hari ini</option>
@@ -144,8 +145,28 @@
       </section>
 
       <section class="card">
+        <h2>Rekap Harian</h2>
+        <div class="table-wrap">
+          <table class="tx-table recap-table">
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Pengeluaran</th>
+                <th>Pemasukan</th>
+              </tr>
+            </thead>
+            <tbody id="recap-body">
+              <tr>
+                <td colspan="3" class="empty-cell">memuat...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
         <div class="section-header">
-          <h2>Daftar Transaksi Keuangan</h2>
+          <h2 id="tx-title">Data Transaksi Keuangan</h2>
           <button class="btn-primary" id="add-btn">+ Tambah Transaksi</button>
         </div>
 
@@ -169,7 +190,11 @@
           </table>
         </div>
 
-        <button class="loadmore" id="loadmore-btn">Muat siklus sebelumnya</button>
+        <div class="pagination" id="pagination">
+          <button class="page-btn" id="prev-page" type="button">&laquo; Sebelumnya</button>
+          <span class="page-info" id="page-info">-</span>
+          <button class="page-btn" id="next-page" type="button">Berikutnya &raquo;</button>
+        </div>
       </section>
     </div>
 

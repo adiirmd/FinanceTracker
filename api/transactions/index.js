@@ -1,5 +1,5 @@
 const { requireAuth } = require("../../lib/auth");
-const { listTransactions, appendTransaction } = require("../../lib/sheets");
+const { listTransactions, appendTransaction, listCycleSheets, isCycleName } = require("../../lib/sheets");
 const { checkSpendingAlert } = require("../../lib/alerts");
 const { sanitizeText, parsePositiveAmount } = require("../../lib/secure");
 
@@ -10,11 +10,21 @@ module.exports = async (req, res) => {
   if (!requireAuth(req, res)) return;
 
   if (req.method === "GET") {
-    // Clamp so a crafted query can't ask for hundreds of sheet reads.
-    const requested = Number(req.query.monthsBack);
-    const monthsBack = Number.isFinite(requested) ? Math.max(0, Math.min(Math.trunc(requested), 12)) : 1;
-    const transactions = await listTransactions({ monthsBack });
-    return res.status(200).json({ transactions, monthsBack });
+    // Only a real cycle name is honoured; anything else silently falls back to
+    // the current cycle so a crafted value can't point at another tab.
+    const requested = String(req.query.cycle || "");
+    const cycle = isCycleName(requested) ? requested : undefined;
+
+    const [transactions, cycles] = await Promise.all([
+      listTransactions({ cycle }),
+      listCycleSheets(),
+    ]);
+
+    return res.status(200).json({
+      transactions,
+      cycle: cycle || cycles[0],
+      cycles,
+    });
   }
 
   if (req.method === "POST") {

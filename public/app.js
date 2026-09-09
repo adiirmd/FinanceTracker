@@ -23,7 +23,12 @@ const sourceSelect = document.getElementById("filter-source");
 const sortSelect = document.getElementById("filter-sort");
 const searchBox = document.getElementById("search-box");
 const exportBtn = document.getElementById("export-btn");
-const loadmoreBtn = document.getElementById("loadmore-btn");
+const cycleSelect = document.getElementById("filter-cycle");
+const recapBody = document.getElementById("recap-body");
+const txTitle = document.getElementById("tx-title");
+const prevPageBtn = document.getElementById("prev-page");
+const nextPageBtn = document.getElementById("next-page");
+const pageInfo = document.getElementById("page-info");
 const addBtn = document.getElementById("add-btn");
 const modalBackdrop = document.getElementById("modal-backdrop");
 const modalTitle = document.getElementById("modal-title");
@@ -38,9 +43,10 @@ const themeToggleLogin = document.getElementById("theme-toggle-login");
 
 let allTransactions = [];
 let chartInstance = null;
-let monthsBack = 1;
 let editingId = null;
-const MAX_MONTHS_BACK = 12;
+let currentCycle = null; // e.g. "September-2026"
+let page = 1;
+const PAGE_SIZE = 5;
 
 const MONTHS_ID = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 const MONTHS_ID_SHORT = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
@@ -63,18 +69,24 @@ function parseWIBDateTime(str) {
   return new Date(wibAsUTC - WIB_OFFSET_MS);
 }
 
-/** The 28th-to-27th billing cycle containing "now", in local device time. */
-function getCurrentCycleRange() {
-  const now = new Date();
-  const day = now.getDate();
-  let start, end;
-  if (day >= 28) {
-    start = new Date(now.getFullYear(), now.getMonth(), 28);
-    end = new Date(now.getFullYear(), now.getMonth() + 1, 27);
-  } else {
-    start = new Date(now.getFullYear(), now.getMonth() - 1, 28);
-    end = new Date(now.getFullYear(), now.getMonth(), 27);
+/**
+ * Date range of a cycle name like "September-2026": the 28th of the previous
+ * month through the 27th of the named month. Falls back to the cycle we are
+ * in now when the name is missing or unrecognised.
+ */
+function getCycleRange(cycleName) {
+  const [monthName, yearStr] = String(cycleName || "").split("-");
+  let monthIdx = MONTHS_ID.indexOf(monthName);
+  let year = Number(yearStr);
+
+  if (monthIdx === -1 || !Number.isFinite(year)) {
+    const now = new Date();
+    monthIdx = now.getDate() >= 28 ? now.getMonth() + 1 : now.getMonth();
+    year = now.getFullYear();
   }
+
+  const start = new Date(year, monthIdx - 1, 28);
+  const end = new Date(year, monthIdx, 27);
   start.setHours(0, 0, 0, 0);
   end.setHours(23, 59, 59, 999);
   return { start, end };
@@ -169,10 +181,13 @@ togglePassword.addEventListener("click", () => {
 // ---------------------------------------------------------------------------
 async function loadTransactions() {
   ledgerBody.innerHTML = '<tr><td colspan="6" class="empty-cell">memuat...</td></tr>';
+  recapBody.innerHTML = '<tr><td colspan="3" class="empty-cell">memuat...</td></tr>';
+
+  const query = currentCycle ? `?cycle=${encodeURIComponent(currentCycle)}` : "";
 
   let res;
   try {
-    res = await api(`/api/transactions?monthsBack=${monthsBack}`);
+    res = await api(`/api/transactions${query}`);
   } catch (err) {
     if (err.message === "unauthorized") return; // already back at the login form
     ledgerBody.innerHTML = `<tr><td colspan="6" class="empty-cell">Gagal konek ke server: ${escapeHtml(err.message)}</td></tr>`;
@@ -193,20 +208,20 @@ async function loadTransactions() {
 
   const data = await res.json();
   allTransactions = data.transactions || [];
+  currentCycle = data.cycle || currentCycle;
+
+  populateCycleOptions(data.cycles || []);
   populateSourceOptions();
   renderChart();
   applyAndRender();
-  updateLoadMoreButton();
 }
 
-function updateLoadMoreButton() {
-  if (monthsBack >= MAX_MONTHS_BACK) {
-    loadmoreBtn.disabled = true;
-    loadmoreBtn.textContent = "Batas riwayat tercapai";
-  } else {
-    loadmoreBtn.disabled = false;
-    loadmoreBtn.textContent = "Muat siklus sebelumnya";
-  }
+function populateCycleOptions(cycles) {
+  const list = cycles.length ? cycles : currentCycle ? [currentCycle] : [];
+  cycleSelect.innerHTML = list
+    .map((c) => `<option value="${escapeAttr(c)}">${escapeHtml(c.replace("-", " "))}</option>`)
+    .join("");
+  if (currentCycle && list.includes(currentCycle)) cycleSelect.value = currentCycle;
 }
 
 function populateSourceOptions() {
@@ -274,20 +289,78 @@ function applyAndRender() {
   sumIncomeEl.textContent = formatIDR(income);
   sumExpenseEl.textContent = formatIDR(expense);
 
+  txTitle.textContent = `Data Transaksi Keuangan ${currentCycle ? currentCycle.replace("-", " ") : ""}`.trim();
+
+  renderDailyRecap();
+
+  // Keep the page in range: filters can shrink the list under the current page.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (page > totalPages) page = totalPages;
+  if (page < 1) page = 1;
+
   ledgerBody.innerHTML = "";
 
   if (!allTransactions.length) {
-    ledgerBody.innerHTML = '<tr><td colspan="6" class="empty-cell">Belum ada transaksi</td></tr>';
+    ledgerBody.innerHTML = '<tr><td colspan="6" class="empty-cell">Belum ada transaksi di periode ini</td></tr>';
+    updatePagination(0, 1);
     return;
   }
   if (!filtered.length) {
     ledgerBody.innerHTML = '<tr><td colspan="6" class="empty-cell">Gak ada transaksi buat filter ini</td></tr>';
+    updatePagination(0, 1);
     return;
   }
 
-  for (const t of filtered) {
+  const startIdx = (page - 1) * PAGE_SIZE;
+  for (const t of filtered.slice(startIdx, startIdx + PAGE_SIZE)) {
     ledgerBody.appendChild(renderRow(t));
   }
+
+  updatePagination(filtered.length, totalPages);
+}
+
+function updatePagination(totalRows, totalPages) {
+  pageInfo.textContent = totalRows
+    ? `Halaman ${page} dari ${totalPages} (${totalRows} transaksi)`
+    : "Tidak ada data";
+  prevPageBtn.disabled = page <= 1 || !totalRows;
+  nextPageBtn.disabled = page >= totalPages || !totalRows;
+}
+
+/**
+ * Per-day totals for the selected cycle, mirroring the "Rekap Harian" block in
+ * the spreadsheet. Built from every transaction in the cycle — not the
+ * filtered view — so it always reads as a complete picture of the period.
+ */
+function renderDailyRecap() {
+  const byDay = new Map();
+
+  for (const t of allTransactions) {
+    const d = parseWIBDateTime(t.date);
+    if (!d) continue;
+    const key = t.date.slice(0, 11); // "08 Sep 2026"
+    if (!byDay.has(key)) byDay.set(key, { sortKey: d.getTime(), expense: 0, income: 0 });
+    const entry = byDay.get(key);
+    entry.sortKey = Math.min(entry.sortKey, d.getTime());
+    if (t.type === "expense") entry.expense += t.amount;
+    else entry.income += t.amount;
+  }
+
+  const rows = [...byDay.entries()].sort((a, b) => a[1].sortKey - b[1].sortKey);
+
+  if (!rows.length) {
+    recapBody.innerHTML = '<tr><td colspan="3" class="empty-cell">Belum ada data</td></tr>';
+    return;
+  }
+
+  recapBody.innerHTML = rows
+    .map(([day, v]) => `
+      <tr>
+        <td data-label="Tanggal">${escapeHtml(day)}</td>
+        <td data-label="Pengeluaran" class="amount expense">${v.expense ? formatIDR(v.expense) : "-"}</td>
+        <td data-label="Pemasukan" class="amount income">${v.income ? formatIDR(v.income) : "-"}</td>
+      </tr>`)
+    .join("");
 }
 
 function renderRow(t) {
@@ -316,7 +389,7 @@ function renderRow(t) {
 
 function describeActiveFilters() {
   const label = (sel) => sel.options[sel.selectedIndex].text;
-  const parts = [label(periodSelect), label(typeSelect), label(sourceSelect)];
+  const parts = [currentCycle ? currentCycle.replace("-", " ") : "-", label(periodSelect), label(typeSelect), label(sourceSelect)];
   const search = searchBox.value.trim();
   if (search) parts.push(`pencarian "${search}"`);
   return parts.join(", ");
@@ -537,7 +610,7 @@ function exportPDF() {
 }
 
 function renderChart() {
-  const { start, end } = getCurrentCycleRange();
+  const { start, end } = getCycleRange(currentCycle);
   const labels = [];
   const incomeByDay = [];
   const expenseByDay = [];
@@ -763,15 +836,37 @@ document.getElementById("logout-btn").addEventListener("click", () => {
   passwordInput.value = "";
 });
 
+// Any filter change restarts paging from the first page.
 for (const el of [periodSelect, typeSelect, sourceSelect, sortSelect]) {
-  el.addEventListener("change", applyAndRender);
+  el.addEventListener("change", () => {
+    page = 1;
+    applyAndRender();
+  });
 }
-searchBox.addEventListener("input", applyAndRender);
-exportBtn.addEventListener("click", exportPDF);
-loadmoreBtn.addEventListener("click", () => {
-  monthsBack = Math.min(monthsBack + 1, MAX_MONTHS_BACK);
+searchBox.addEventListener("input", () => {
+  page = 1;
+  applyAndRender();
+});
+
+cycleSelect.addEventListener("change", () => {
+  currentCycle = cycleSelect.value;
+  page = 1;
   loadTransactions();
 });
+
+prevPageBtn.addEventListener("click", () => {
+  if (page > 1) {
+    page--;
+    applyAndRender();
+  }
+});
+
+nextPageBtn.addEventListener("click", () => {
+  page++;
+  applyAndRender();
+});
+
+exportBtn.addEventListener("click", exportPDF);
 
 syncThemeIcons();
 document.getElementById("username").focus();
