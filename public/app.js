@@ -627,6 +627,7 @@ function renderChart() {
   const styles = getComputedStyle(document.documentElement);
   const tickColor = styles.getPropertyValue("--muted").trim() || "#6b7280";
   const gridColor = styles.getPropertyValue("--grid").trim() || "#e5e7eb";
+  const fadedColor = styles.getPropertyValue("--border").trim() || "#9ca3af";
 
   const ctx = document.getElementById("trend-chart");
   if (chartInstance) chartInstance.destroy();
@@ -666,7 +667,38 @@ function renderChart() {
         legend: {
           display: true,
           position: "bottom",
-          labels: { color: tickColor, usePointStyle: true, boxWidth: 8, padding: 16 },
+          labels: {
+            color: tickColor,
+            usePointStyle: true,
+            pointStyle: "circle",
+            boxWidth: 8,
+            boxHeight: 8,
+            boxPadding: 8, // breathing room between the circle and its label
+            padding: 18,
+            // Chart.js strikes a legend label through whenever the item is
+            // flagged `hidden`. Reporting `hidden: false` always suppresses
+            // that, leaving a checkbox glyph to carry the on/off state — and
+            // the click handler below manages visibility by hand instead.
+            generateLabels: (chart) =>
+              chart.data.datasets.map((ds, i) => {
+                const visible = chart.isDatasetVisible(i);
+                return {
+                  text: `${visible ? "\u2611" : "\u2610"} ${ds.label}`,
+                  fillStyle: ds.borderColor,
+                  strokeStyle: ds.borderColor,
+                  lineWidth: 2,
+                  fontColor: visible ? tickColor : fadedColor,
+                  hidden: false,
+                  datasetIndex: i,
+                };
+              }),
+          },
+          onClick: (e, legendItem, legend) => {
+            const chart = legend.chart;
+            const i = legendItem.datasetIndex;
+            chart.setDatasetVisibility(i, !chart.isDatasetVisible(i));
+            chart.update();
+          },
         },
         tooltip: { callbacks: { label: (item) => `${item.dataset.label}: ${formatIDR(item.parsed.y)}` } },
       },
