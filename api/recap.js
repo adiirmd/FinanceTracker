@@ -1,6 +1,6 @@
-const { listTransactions } = require("../lib/sheets");
+const { listTransactions, cycleSheetName, getRecapMarker, setRecapMarker } = require("../lib/sheets");
 const { sendTelegramMessage } = require("../lib/telegram");
-const { parseDateTimeWIB, startOfTodayWIB, startOfCycleWIB } = require("../lib/format");
+const { parseDateTimeWIB, startOfTodayWIB, startOfCycleWIB, wibNowWithGrace, formatDateTimeWIB } = require("../lib/format");
 const { safeEqual } = require("../lib/secure");
 
 function formatIDR(n) {
@@ -8,23 +8,30 @@ function formatIDR(n) {
 }
 
 module.exports = async (req, res) => {
-  // When CRON_SECRET is set in the Vercel project, Vercel automatically sends
-  // it as "Authorization: Bearer <CRON_SECRET>" on cron-triggered requests.
   const authHeader = String(req.headers.authorization || "");
   const expected = process.env.CRON_SECRET;
   if (!expected || !safeEqual(authHeader, `Bearer ${expected}`)) {
     return res.status(401).json({ error: "unauthorized" });
   }
 
-  // "monthly" covers the 28th-to-27th billing cycle, matching the sheet tabs;
-  // anything else is today only.
   const period = req.query.period === "monthly" ? "monthly" : "daily";
-  const since = period === "monthly"
-    ? startOfCycleWIB().getTime()
-    : startOfTodayWIB().getTime();
 
-  // The current cycle sheet holds everything either period needs.
-  const all = await listTransactions();
+  const referenceNow = wibNowWithGrace();
+  const since = period === "monthly" ? startOfCycleWIB(referenceNow).getTime() : startOfTodayWIB(referenceNow).getTime();
+
+  const sheetName = cycleSheetName(referenceNow);
+  const markerKind = period === "monthly" ? "monthly" : "daily";
+  const markerValue = period === "monthly" ? sheetName : formatDateTimeWIB(new Date(since)).slice(0, 11);
+
+  const force = req.query.force === "true";
+  if (!force) {
+    const already = await getRecapMarker(markerKind, sheetName);
+    if (already === markerValue) {
+      return res.status(200).json({ ok: true, skipped: true, reason: "already sent", period, markerValue });
+    }
+  }
+
+  const all = await listTransactions({ cycle: sheetName });
   const inRange = all.filter((t) => {
     const d = parseDateTimeWIB(t.date);
     return d && d.getTime() >= since;
@@ -43,13 +50,7 @@ module.exports = async (req, res) => {
 
   const heading = period === "monthly" ? "🗓️ Rekap Bulanan" : "📅 Rekap Harian";
 
-  const lines = [
-    `<b>${heading}</b>`,
-    "",
-    `Pemasukan: ${formatIDR(income)}`,
-    `Pengeluaran: ${formatIDR(expense)}`,
-    `Jumlah transaksi: ${inRange.length}`,
-  ];
+  const lines = [`<b>${heading}</b>`, "", `Pemasukan: ${formatIDR(income)}`, `Pengeluaran: ${formatIDR(expense)}`, `Jumlah transaksi: ${inRange.length}`];
 
   if (topSources.length) {
     lines.push("", "<b>Top aplikasi pengeluaran:</b>");
@@ -59,5 +60,7 @@ module.exports = async (req, res) => {
   }
 
   await sendTelegramMessage(lines.join("\n"));
+  await setRecapMarker(markerKind, sheetName, markerValue);
+
   return res.status(200).json({ ok: true, period, income, expense, count: inRange.length });
 };
