@@ -23,9 +23,9 @@ const sourceSelect = document.getElementById("filter-source");
 const sortSelect = document.getElementById("filter-sort");
 const searchBox = document.getElementById("search-box");
 const exportBtn = document.getElementById("export-btn");
-const cycleSelect = document.getElementById("filter-cycle");
 const recapBody = document.getElementById("recap-body");
 const txTitle = document.getElementById("tx-title");
+const summaryTitle = document.getElementById("summary-title");
 const prevPageBtn = document.getElementById("prev-page");
 const nextPageBtn = document.getElementById("next-page");
 const pageInfo = document.getElementById("page-info");
@@ -216,10 +216,64 @@ async function loadTransactions() {
   applyAndRender();
 }
 
+/** Sortable rank for a cycle name, so "Agustus-2026" < "September-2026". */
+function cycleRank(name) {
+  const [month, year] = String(name).split("-");
+  return Number(year) * 12 + MONTHS_ID.indexOf(month);
+}
+
+/**
+ * Rebuilds the single period dropdown. The first three entries are ranges
+ * inside the cycle we're living in; anything under "Bulan sebelumnya" is a
+ * whole past cycle. A native <select> can't pop open a nested submenu, so the
+ * older months sit in a labelled group instead of behind a "more..." click —
+ * same list, one interaction instead of two.
+ */
 function populateCycleOptions(cycles) {
-  const list = cycles.length ? cycles : currentCycle ? [currentCycle] : [];
-  cycleSelect.innerHTML = list.map((c) => `<option value="${escapeAttr(c)}">${escapeHtml(c.replace("-", " "))}</option>`).join("");
-  if (currentCycle && list.includes(currentCycle)) cycleSelect.value = currentCycle;
+  const current = currentCycleName();
+  const currentRank = cycleRank(current);
+  // Strictly older only: the group is labelled "Bulan sebelumnya", so a sheet
+  // that somehow sits in the future doesn't belong under it.
+  const previous = (cycles || [])
+    .filter((c) => cycleRank(c) < currentRank)
+    .sort((a, b) => cycleRank(b) - cycleRank(a));
+
+  const parts = [
+    '<option value="today">Hari ini</option>',
+    '<option value="week">7 hari terakhir</option>',
+    '<option value="cycle">Bulan ini</option>',
+  ];
+
+  if (previous.length) {
+    parts.push('<optgroup label="Bulan sebelumnya">');
+    for (const c of previous) {
+      parts.push(`<option value="${escapeAttr(c)}">${escapeHtml(c.replace("-", " "))}</option>`);
+    }
+    parts.push("</optgroup>");
+  }
+
+  const keep = periodSelect.value;
+  periodSelect.innerHTML = parts.join("");
+  // Restore the selection if it still exists, otherwise fall back to default.
+  if (keep && [...periodSelect.options].some((o) => o.value === keep)) {
+    periodSelect.value = keep;
+  } else {
+    periodSelect.value = "cycle";
+  }
+}
+
+/** Which cycle sheet a dropdown value needs loaded. */
+function cycleForPeriodValue(value) {
+  if (value === "today" || value === "week" || value === "cycle") return currentCycleName();
+  return value; // already a cycle name like "Agustus-2026"
+}
+
+/** Human label for the summary cards, e.g. "Ringkasan Bulan September 2026". */
+function summaryLabelFor(value) {
+  if (value === "today") return "Ringkasan Hari Ini";
+  if (value === "week") return "Ringkasan 7 Hari Terakhir";
+  const cycle = value === "cycle" ? currentCycleName() : value;
+  return `Ringkasan Bulan ${cycle.replace("-", " ")}`;
 }
 
 function populateSourceOptions() {
@@ -300,6 +354,7 @@ function applyAndRender() {
   sumIncomeEl.textContent = formatIDR(income);
   sumExpenseEl.textContent = formatIDR(expense);
 
+  summaryTitle.textContent = summaryLabelFor(periodSelect.value);
   txTitle.textContent = `Data Transaksi Keuangan ${currentCycle ? currentCycle.replace("-", " ") : ""}`.trim();
 
   renderDailyRecap();
@@ -870,31 +925,30 @@ document.getElementById("logout-btn").addEventListener("click", () => {
 });
 
 // Any filter change restarts paging from the first page.
-for (const el of [periodSelect, typeSelect, sourceSelect, sortSelect]) {
+for (const el of [typeSelect, sourceSelect, sortSelect]) {
   el.addEventListener("change", () => {
     page = 1;
     applyAndRender();
   });
 }
+
+// The period dropdown may also change which cycle sheet is needed; only then
+// is a refetch required, otherwise it's a pure re-render of what's loaded.
+periodSelect.addEventListener("change", () => {
+  page = 1;
+  const target = cycleForPeriodValue(periodSelect.value);
+  if (target !== currentCycle) {
+    currentCycle = target;
+    loadTransactions();
+  } else {
+    applyAndRender();
+  }
+});
 searchBox.addEventListener("input", () => {
   page = 1;
   applyAndRender();
 });
 
-cycleSelect.addEventListener("change", () => {
-  currentCycle = cycleSelect.value;
-  page = 1;
-
-  // "Hari ini" / "7 hari terakhir" can only match the cycle we're living in.
-  // Picking an older period with one of those still selected would show an
-  // empty table that looks broken, so widen the view to the whole cycle.
-  const isCurrent = currentCycle === currentCycleName();
-  if (!isCurrent && periodSelect.value !== "cycle") {
-    periodSelect.value = "cycle";
-  }
-
-  loadTransactions();
-});
 
 prevPageBtn.addEventListener("click", () => {
   if (page > 1) {

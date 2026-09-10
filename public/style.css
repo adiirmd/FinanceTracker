@@ -289,6 +289,13 @@ select:disabled { opacity: 0.6; cursor: not-allowed; }
   margin: 0 0 14px;
 }
 
+.summary-title {
+  font-size: clamp(14px, 3.5vw, 15px);
+  font-weight: 600;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
