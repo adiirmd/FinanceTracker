@@ -241,10 +241,24 @@ function periodStart(period) {
   if (period === "week") {
     return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   }
-  if (period === "month") {
-    return new Date(now.getFullYear(), now.getMonth(), 1);
-  }
+  // "cycle" means the whole 28-to-27 period, which is exactly what was
+  // fetched — so no date cutoff is needed.
   return null;
+}
+
+/** Cycle name for today, e.g. "September-2026". */
+function currentCycleName() {
+  const now = new Date();
+  let monthIdx = now.getMonth();
+  let year = now.getFullYear();
+  if (now.getDate() >= 28) {
+    monthIdx += 1;
+    if (monthIdx > 11) {
+      monthIdx = 0;
+      year += 1;
+    }
+  }
+  return `${MONTHS_ID[monthIdx]}-${year}`;
 }
 
 function getFilteredSorted() {
@@ -870,6 +884,15 @@ searchBox.addEventListener("input", () => {
 cycleSelect.addEventListener("change", () => {
   currentCycle = cycleSelect.value;
   page = 1;
+
+  // "Hari ini" / "7 hari terakhir" can only match the cycle we're living in.
+  // Picking an older period with one of those still selected would show an
+  // empty table that looks broken, so widen the view to the whole cycle.
+  const isCurrent = currentCycle === currentCycleName();
+  if (!isCurrent && periodSelect.value !== "cycle") {
+    periodSelect.value = "cycle";
+  }
+
   loadTransactions();
 });
 
