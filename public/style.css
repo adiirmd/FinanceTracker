@@ -505,9 +505,23 @@ select:disabled { opacity: 0.6; cursor: not-allowed; }
 @media (max-width: 640px) {
   .page { padding: 14px 12px 48px; }
 
-  .filter-bar select,
+  /* Two columns instead of one control per row: the same six controls fit in
+     four rows rather than six, so the filters stop pushing the summary and
+     chart below the fold on a phone. */
+  .filter-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .filter-bar select {
+    width: 100%;
+    min-width: 0; /* lets a long month name shrink instead of overflowing */
+  }
+
+  /* These two read better full width. */
   .filter-bar input[type="search"],
-  .filter-bar .btn-outline { flex: 1 1 100%; }
+  .filter-bar .btn-outline { grid-column: 1 / -1; }
 
   .section-header { flex-direction: column; align-items: stretch; }
   .section-header .btn-primary { width: 100%; }
