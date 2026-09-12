@@ -216,6 +216,10 @@
           <label class="field-label" for="tx-raw">Keterangan</label>
           <input id="tx-raw" type="text" name="raw" placeholder="Catatan singkat" />
 
+          <label class="field-label" for="tx-date" id="tx-date-label">Tanggal (opsional)</label>
+          <input id="tx-date" type="datetime-local" name="date" />
+          <p class="field-hint" id="tx-date-hint">Kosongkan buat pakai waktu sekarang. Isi kalau mau mundurin tanggal — misal transaksi yang kelewat dicatat, atau bikin data contoh yang gak nyampur sama data asli.</p>
+
           <div class="modal-actions">
             <button type="button" class="btn-outline" id="modal-cancel">Batal</button>
             <button type="submit" class="btn-primary" id="modal-submit">Simpan</button>
