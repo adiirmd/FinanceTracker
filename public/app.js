@@ -37,6 +37,9 @@ const modalCancel = document.getElementById("modal-cancel");
 const modalSubmit = document.getElementById("modal-submit");
 const txForm = document.getElementById("tx-form");
 const txTypeField = document.getElementById("tx-type");
+const txDateField = document.getElementById("tx-date");
+const txDateLabel = document.getElementById("tx-date-label");
+const txDateHint = document.getElementById("tx-date-hint");
 const chartPeriodLabel = document.getElementById("chart-period-label");
 const themeToggle = document.getElementById("theme-toggle");
 const themeToggleLogin = document.getElementById("theme-toggle-login");
@@ -234,15 +237,9 @@ function populateCycleOptions(cycles) {
   const currentRank = cycleRank(current);
   // Strictly older only: the group is labelled "Bulan sebelumnya", so a sheet
   // that somehow sits in the future doesn't belong under it.
-  const previous = (cycles || [])
-    .filter((c) => cycleRank(c) < currentRank)
-    .sort((a, b) => cycleRank(b) - cycleRank(a));
+  const previous = (cycles || []).filter((c) => cycleRank(c) < currentRank).sort((a, b) => cycleRank(b) - cycleRank(a));
 
-  const parts = [
-    '<option value="today">Hari ini</option>',
-    '<option value="week">7 hari terakhir</option>',
-    '<option value="cycle">Bulan ini</option>',
-  ];
+  const parts = ['<option value="today">Hari ini</option>', '<option value="week">7 hari terakhir</option>', '<option value="cycle">Bulan ini</option>'];
 
   if (previous.length) {
     parts.push('<optgroup label="Bulan sebelumnya">');
@@ -787,6 +784,9 @@ function openModal(mode, t) {
   modalTitle.textContent = mode === "edit" ? "Edit Transaksi" : "Tambah Transaksi";
   txForm.reset();
 
+  const showDateField = mode !== "edit";
+  for (const el of [txDateField, txDateLabel, txDateHint]) el.hidden = !showDateField;
+
   if (mode === "edit") {
     txForm.type.value = t.type;
     txForm.amount.value = t.amount;
@@ -817,6 +817,12 @@ txForm.addEventListener("submit", async (e) => {
     source: form.get("source") || "manual",
     raw: form.get("raw"),
   };
+
+  const rawDate = form.get("date");
+  if (!editingId && rawDate) {
+    const d = new Date(rawDate); // parsed as device-local time, i.e. WIB
+    if (!Number.isNaN(d.getTime())) body.date = d.toISOString();
+  }
 
   modalSubmit.disabled = true;
   modalSubmit.textContent = "Menyimpan...";
@@ -948,7 +954,6 @@ searchBox.addEventListener("input", () => {
   page = 1;
   applyAndRender();
 });
-
 
 prevPageBtn.addEventListener("click", () => {
   if (page > 1) {
