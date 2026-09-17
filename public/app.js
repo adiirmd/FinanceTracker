@@ -2,7 +2,7 @@
 // Auth token lives here and ONLY here: a plain JS variable. It is never put in
 // a cookie, localStorage, or sessionStorage, so reloading the page or opening
 // the link again destroys it and forces a fresh login. That's also why login
-// and dashboard are one page — a navigation would wipe it mid-flow.
+// and dashboard are one page, so a navigation would wipe it mid-flow.
 // ---------------------------------------------------------------------------
 let authToken = null;
 
@@ -205,7 +205,7 @@ async function loadTransactions() {
     } catch {
       // response wasn't JSON, keep the status code
     }
-    ledgerBody.innerHTML = `<tr><td colspan="6" class="empty-cell">Gagal memuat (${escapeHtml(String(detail))}) — cek Vercel Logs</td></tr>`;
+    ledgerBody.innerHTML = `<tr><td colspan="6" class="empty-cell">Gagal memuat (${escapeHtml(String(detail))}), cek Vercel Logs</td></tr>`;
     return;
   }
 
@@ -229,8 +229,8 @@ function cycleRank(name) {
  * Rebuilds the single period dropdown. The first three entries are ranges
  * inside the cycle we're living in; anything under "Bulan sebelumnya" is a
  * whole past cycle. A native <select> can't pop open a nested submenu, so the
- * older months sit in a labelled group instead of behind a "more..." click —
- * same list, one interaction instead of two.
+ * older months sit in a labelled group instead of behind a "more..." click.
+ * Same list, one interaction instead of two.
  */
 function populateCycleOptions(cycles) {
   const current = currentCycleName();
@@ -293,7 +293,7 @@ function periodStart(period) {
     return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   }
   // "cycle" means the whole 28-to-27 period, which is exactly what was
-  // fetched — so no date cutoff is needed.
+  // fetched, so no date cutoff is needed.
   return null;
 }
 
@@ -390,8 +390,8 @@ function updatePagination(totalRows, totalPages) {
 
 /**
  * Per-day totals for the selected cycle, mirroring the "Rekap Harian" block in
- * the spreadsheet. Built from every transaction in the cycle — not the
- * filtered view — so it always reads as a complete picture of the period.
+ * the spreadsheet. Built from every transaction in the cycle, not the
+ * filtered view, so it always reads as a complete picture of the period.
  */
 function renderDailyRecap() {
   const byDay = new Map();
@@ -606,7 +606,7 @@ function exportPDF() {
 
   // ---- Detail semua transaksi ----
   // Continues right after the previous section. The heading is drawn by hand,
-  // so unlike an autoTable it won't move itself to the next page — check there
+  // so unlike an autoTable it won't move itself to the next page, so check there
   // is room for the heading plus a few rows, otherwise start a page first.
   const pageHeight = doc.internal.pageSize.getHeight();
   let detailY = doc.lastAutoTable.finalY + 38;
@@ -743,7 +743,7 @@ function renderChart() {
             padding: 18,
             // Chart.js strikes a legend label through whenever the item is
             // flagged `hidden`. Reporting `hidden: false` always suppresses
-            // that, leaving a checkbox glyph to carry the on/off state — and
+            // that, leaving a checkbox glyph to carry the on/off state, and
             // the click handler below manages visibility by hand instead.
             generateLabels: (chart) =>
               chart.data.datasets.map((ds, i) => {
@@ -793,7 +793,7 @@ function openModal(mode, t) {
     txForm.source.value = t.source || "";
     txForm.raw.value = t.raw || "";
     txTypeField.disabled = true;
-    txTypeField.title = "Jenis gak bisa diubah saat edit — hapus & buat baru kalau perlu ganti jenis";
+    txTypeField.title = "Jenis gak bisa diubah saat edit, hapus lalu buat baru kalau perlu ganti jenis";
   } else {
     txTypeField.disabled = false;
     txTypeField.title = "";
@@ -893,7 +893,7 @@ function toggleTheme() {
   try {
     localStorage.setItem("theme", next);
   } catch {
-    // private mode / storage disabled — the theme still applies for this session
+    // private mode or storage disabled, the theme still applies for this session
   }
   syncThemeIcons();
   if (chartInstance) renderChart();

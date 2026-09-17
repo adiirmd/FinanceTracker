@@ -1,7 +1,7 @@
 const { checkCredentials, issueToken, TOKEN_EXPIRY_SECONDS } = require("../lib/auth");
 
 // Best-effort brute-force brake. Serverless instances are recycled and there
-// may be several at once, so this counter is NOT a guarantee — it only slows
+// may be several at once, so this counter is NOT a guarantee. It only slows
 // down an attacker who happens to land on a warm instance. The real defences
 // are the long random ADMIN_PASS and, if you want a hard limit, a rate-limit
 // rule in the Vercel dashboard (Settings -> Firewall).

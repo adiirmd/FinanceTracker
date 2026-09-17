@@ -3,11 +3,11 @@ const { sendTelegramMessage } = require("../lib/telegram");
 const { parseDateTimeWIB, startOfTodayWIB, startOfCycleWIB, wibNowWithGrace, cycleSheetName } = require("../lib/format");
 const { safeEqual } = require("../lib/secure");
 
-// Guards against sending the same recap twice — but only for genuinely
+// Guards against sending the same recap twice, but only for genuinely
 // near-simultaneous triggers (two overlapping schedulers, a retry, an
 // accidental double-click on "test run"). A manual test earlier in the day
 // and the real scheduled fire that evening are hours apart and both go
-// through — this is NOT "once per calendar day", it's "not twice within an
+// through. This is NOT "once per calendar day", it's "not twice within an
 // hour of each other".
 const DEDUPE_WINDOW_MS = 60 * 60 * 1000;
 
@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
   // When CRON_SECRET is set in the Vercel project, Vercel automatically sends
   // it as "Authorization: Bearer <CRON_SECRET>" on cron-triggered requests.
   // An external scheduler (cron-job.org etc.) is configured to send the same
-  // header manually — the check itself doesn't care which one called it, and
+  // header manually. The check itself doesn't care which one called it, and
   // that includes its manual "test run" button: from the server's side a
   // deliberate test looks identical to the real scheduled fire.
   const authHeader = String(req.headers.authorization || "");
@@ -95,7 +95,7 @@ module.exports = async (req, res) => {
 
   await sendTelegramMessage(lines.join("\n"));
 
-  // Only recorded after a successful send — a failed Telegram call should be
+  // Only recorded after a successful send. A failed Telegram call should be
   // retryable, not silently marked as done. Stores WHEN it was sent, not
   // which day it was for; the dedupe check above is purely time-based.
   await setRecapMarker(markerKind, sheetName, new Date().toISOString());

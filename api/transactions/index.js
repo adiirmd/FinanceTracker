@@ -36,7 +36,7 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: "jumlah harus angka positif yang wajar" });
     }
 
-    // Optional backdating — e.g. entering a missed transaction with its real
+    // Optional backdating, e.g. entering a missed transaction with its real
     // timestamp, or building an isolated demo cycle for screenshots. Blank or
     // absent means "now", same as before.
     let customDate;

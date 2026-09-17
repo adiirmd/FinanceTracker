@@ -608,7 +608,7 @@ select:disabled {
   }
 }
 
-/* ---------- Responsive: phone — table reflows into stacked cards ---------- */
+/* ---------- Responsive: phone, table reflows into stacked cards ---------- */
 @media (max-width: 640px) {
   .page {
     padding: 14px 12px 48px;
@@ -740,8 +740,8 @@ select:disabled {
   }
 }
 
-/* The `hidden` attribute is ignored on inline SVG in Chrome/Safari — their UA
-   stylesheet scopes that rule to HTML elements only — so icon toggles would
+/* The `hidden` attribute is ignored on inline SVG in Chrome/Safari. Their UA
+   stylesheet scopes that rule to HTML elements only, so icon toggles would
    render both states stacked. Restate it explicitly. */
 svg[hidden] {
   display: none !important;
