@@ -10,10 +10,25 @@ const WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 8;
 const MIN_RESPONSE_MS = 400; // floor on every login response, success or not
 
+/**
+ * Takes the entry a trusted proxy appended, which is the rightmost one.
+ * The leftmost entry of x-forwarded-for is whatever the caller sent, so
+ * keying the brake on it lets an attacker reset their own counter on every
+ * request just by varying the header.
+ */
+function lastHop(value) {
+  const raw = Array.isArray(value) ? value[value.length - 1] : value;
+  const hops = String(raw || "")
+    .split(",")
+    .map((hop) => hop.trim())
+    .filter(Boolean);
+  return hops.length ? hops[hops.length - 1] : "";
+}
+
 function clientKey(req) {
-  const fwd = req.headers["x-forwarded-for"];
-  const ip = Array.isArray(fwd) ? fwd[0] : String(fwd || "").split(",")[0].trim();
-  return ip || "unknown";
+  // Vercel sets these two itself and drops any copy the caller sends, so they
+  // are preferred over x-forwarded-for.
+  return lastHop(req.headers["x-vercel-forwarded-for"]) || lastHop(req.headers["x-real-ip"]) || lastHop(req.headers["x-forwarded-for"]) || "unknown";
 }
 
 function isLockedOut(key) {

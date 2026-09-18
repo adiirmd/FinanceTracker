@@ -1,7 +1,7 @@
 const { parseNotification } = require("../lib/parser");
 const { appendTransaction } = require("../lib/sheets");
 const { checkSpendingAlert } = require("../lib/alerts");
-const { safeEqual, sanitizeText } = require("../lib/secure");
+const { safeEqual, sanitizeText, parsePositiveAmount } = require("../lib/secure");
 
 // A phone notification is a couple of sentences; anything far beyond that is
 // junk or an attempt to stuff the sheet, so it's cut before parsing.
@@ -40,11 +40,22 @@ module.exports = async (req, res) => {
   const parsed = parseNotification(sourceApp, text);
 
   if (!parsed.ok) {
-    console.warn("Unparsed notification:", sourceApp, parsed.error, parsed.raw);
+    // The text itself stays out of the logs: a notification carries balances
+    // and account fragments, and the length is enough to debug a parse miss.
+    console.warn("Unparsed notification:", sourceApp, parsed.error, `${text.length} chars`);
     return res.status(200).json({ stored: false, reason: parsed.error });
   }
 
-  const saved = await appendTransaction(parsed.transaction);
+  // The regex in the parser accepts any run of digits, so a long enough one
+  // reaches Infinity and lands in the sheet as an empty cell. Same validation
+  // as the manual entry path.
+  const amount = parsePositiveAmount(parsed.transaction.amount);
+  if (amount === null) {
+    console.warn("Rejected notification amount:", sourceApp, `${text.length} chars`);
+    return res.status(200).json({ stored: false, reason: "amount out of range" });
+  }
+
+  const saved = await appendTransaction({ ...parsed.transaction, amount });
 
   // The transaction is already safely stored; a failing alert must never turn
   // a successful save into an error response.

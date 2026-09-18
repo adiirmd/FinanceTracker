@@ -1,5 +1,5 @@
 const { listTransactions, getRecapMarker, setRecapMarker } = require("../lib/sheets");
-const { sendTelegramMessage } = require("../lib/telegram");
+const { sendTelegramMessage, escapeHtml } = require("../lib/telegram");
 const { parseDateTimeWIB, startOfTodayWIB, startOfCycleWIB, wibNowWithGrace, cycleSheetName } = require("../lib/format");
 const { safeEqual } = require("../lib/secure");
 
@@ -89,7 +89,7 @@ module.exports = async (req, res) => {
   if (topSources.length) {
     lines.push("", "<b>Top aplikasi pengeluaran:</b>");
     for (const [src, amt] of topSources) {
-      lines.push(`• ${src}: ${formatIDR(amt)}`);
+      lines.push(`• ${escapeHtml(src)}: ${formatIDR(amt)}`);
     }
   }
 
