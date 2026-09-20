@@ -9,7 +9,7 @@ There is no database. Google Sheets is the datastore, which keeps the running co
 at zero and leaves the data in a form that can be read, filtered and corrected by
 hand without going through the application.
 
-Live instance: [finance.adiirmd.my.id](https://finance.adiirmd.my.id)
+Live instance: [finance.adiirmd.id](https://finance.adiirmd.id)
 
 ## How it works
 
@@ -139,7 +139,7 @@ repository.
 Submit a notification:
 
 ```bash
-curl -X POST https://finance.adiirmd.my.id/api/webhook \
+curl -X POST https://finance.adiirmd.id/api/webhook \
   -H "x-webhook-secret: $WEBHOOK_SECRET" \
   -H "x-source-app: gopay" \
   -H "Content-Type: application/json" \
@@ -149,11 +149,11 @@ curl -X POST https://finance.adiirmd.my.id/api/webhook \
 Authenticate and read the ledger:
 
 ```bash
-TOKEN=$(curl -s -X POST https://finance.adiirmd.my.id/api/login \
+TOKEN=$(curl -s -X POST https://finance.adiirmd.id/api/login \
   -H "Content-Type: application/json" \
   -d '{"username":"...","password":"..."}' | jq -r .token)
 
-curl https://finance.adiirmd.my.id/api/transactions \
+curl https://finance.adiirmd.id/api/transactions \
   -H "Authorization: Bearer $TOKEN"
 ```
 
